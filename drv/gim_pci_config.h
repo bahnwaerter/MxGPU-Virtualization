@@ -24,8 +24,13 @@
 #define _GPU_IOV_MODULE__PCI_CONFIG_H
 
 
+#include <linux/version.h>
+#include "gim_rhel_version.h"
 #include <linux/pci.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0) && !defined(RHEL_KERNEL) || \
+	RHEL_CHECK_VERSION(RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8, 3))
 #include <linux/pci-aspm.h>
+#endif
 
 #define PCI_EXT_CONFIG_OFFSET 256
 #define PCI_EXT_CONFIG_SIZE   4096

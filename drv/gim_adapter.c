@@ -1640,8 +1640,13 @@ static const unsigned int gpu_hang_check_list[GPU_STATUS_SIZE] = {
 
 static int wait_cmd_complete(struct function *func)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec start_time;
 	struct timespec delta_time;
+#else
+	struct timespec64 start_time;
+	struct timespec64 delta_time;
+#endif
 
 	uint32_t time_out = 2; /* 2 seconds */
 	kcl_type_u8 command;
@@ -1650,7 +1655,11 @@ static int wait_cmd_complete(struct function *func)
 	uint32_t status;
 	struct adapter *adapt = func->adapt;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	getnstimeofday(&start_time);
+#else
+	ktime_get_real_ts64(&start_time);
+#endif
 
 	pci_read_config_dword(adapt->pf.pci_dev, 4, &status);
 	gim_dbg("Cmd/Status @ 4 = 0x%08x\n", status);
@@ -1687,8 +1696,13 @@ static int wait_cmd_complete(struct function *func)
 		}
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	gim_err(" wait_cmd_complete -- time out after %ld.%09ld sec\n",
 		delta_time.tv_sec, delta_time.tv_nsec);
+#else
+	gim_err(" wait_cmd_complete -- time out after %lld.%09ld sec\n",
+		delta_time.tv_sec, delta_time.tv_nsec);
+#endif
 	pci_read_config_byte(adapt->pf.pci_dev,
 			adapt->gpuiov.pos + PCI_GPUIOV_CMD_CONTROL,
 			&command);
@@ -1758,7 +1772,11 @@ int run_vf(struct function *func)
 	ret = wait_cmd_complete(func);
 
 	/* record time of start to run vf */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	getnstimeofday(&(func->time_log.active_last_tick));
+#else
+	ktime_get_real_ts64(&(func->time_log.active_last_tick));
+#endif
 
 	if (is_pf) {
 		uint32_t tlb_control = pf_read_register(adapt,
@@ -1780,7 +1798,11 @@ int idle_vf(struct function *func)
 {
 	int  is_pf;
 	uint32_t status;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec tmp;
+#else
+	struct timespec64 tmp;
+#endif
 	struct adapter *adapt;
 
 	adapt = func->adapt;
@@ -1805,10 +1827,17 @@ int idle_vf(struct function *func)
 
 	/* record current vf active time*/
 	if (func->time_log.active_last_tick.tv_sec != 0) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 		getnstimeofday(&tmp);
 		tmp = timespec_sub(tmp, func->time_log.active_last_tick);
 		func->time_log.active_time =
 			timespec_add(func->time_log.active_time, tmp);
+#else
+		ktime_get_real_ts64(&tmp);
+		tmp = timespec64_sub(tmp, func->time_log.active_last_tick);
+		func->time_log.active_time =
+			timespec64_add(func->time_log.active_time, tmp);
+#endif
 
 		/* clear last tick record, in case of twice idle */
 		func->time_log.active_last_tick.tv_sec = 0;
@@ -3987,12 +4016,23 @@ void dump_scratch_ram(struct adapter *adapt,
 	}
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 struct timespec time_elapsed(struct timespec *ts_start)
 {
 	struct timespec ts_end;
 	struct timespec ts_diff;
+#else
+struct timespec64 time_elapsed(struct timespec64 *ts_start)
+{
+	struct timespec64 ts_end;
+	struct timespec64 ts_diff;
+#endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	getnstimeofday(&ts_end);
+#else
+	ktime_get_real_ts64(&ts_end);
+#endif
 	ts_diff.tv_sec = ts_end.tv_sec - ts_start->tv_sec;
 	if (ts_start->tv_nsec > ts_end.tv_nsec) {
 		--ts_diff.tv_sec;
@@ -4008,8 +4048,13 @@ struct timespec time_elapsed(struct timespec *ts_start)
 /* If lock available return 1, if can't lock return 0 */
 int amd_try_spinlock(spinlock_t *lock, uint32_t usec_timeout)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec start_time;
 	struct timespec elapsed_time;
+#else
+	struct timespec64 start_time;
+	struct timespec64 elapsed_time;
+#endif
 
 	/* check the lock */
 	if (spin_trylock(lock))
@@ -4018,7 +4063,11 @@ int amd_try_spinlock(spinlock_t *lock, uint32_t usec_timeout)
 	/* Lock is busy */
 	gim_warn("Lock is busy\n");
 	/* Get the current time */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	getnstimeofday(&start_time);
+#else
+	ktime_get_real_ts64(&start_time);
+#endif
 	/* loop checking lock and time until timeout */
 	elapsed_time.tv_sec = 0;
 	elapsed_time.tv_nsec = 0;
@@ -4027,8 +4076,13 @@ int amd_try_spinlock(spinlock_t *lock, uint32_t usec_timeout)
 		if (elapsed_time.tv_nsec > (usec_timeout * 1000))
 			return 0;
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	gim_info("Lock was busy but freed after %ld.%9ld sec\n",
 			elapsed_time.tv_sec, elapsed_time.tv_nsec);
+#else
+	gim_info("Lock was busy but freed after %lld.%9ld sec\n",
+			elapsed_time.tv_sec, elapsed_time.tv_nsec);
+#endif
 	return 1;
 }
 

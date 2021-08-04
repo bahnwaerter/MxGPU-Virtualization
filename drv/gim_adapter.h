@@ -100,15 +100,29 @@ union physical_address {
 
 #define MAX_MSG_LEN  64
 struct op_time_log {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timeval init_start;
 	struct timeval init_end;
 	struct timeval finish_start;
 	struct timeval finish_end;
+#else
+	struct timespec64 init_start;
+	struct timespec64 init_end;
+	struct timespec64 finish_start;
+	struct timespec64 finish_end;
+#endif
 	int reset_count;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timeval reset_time;
 	/* we need accurate time here*/
 	struct timespec active_last_tick;
 	struct timespec active_time;
+#else
+	struct timespec64 reset_time;
+	/* we need accurate time here*/
+	struct timespec64 active_last_tick;
+	struct timespec64 active_time;
+#endif
 };
 
 enum amdgim_option_mode {
@@ -413,7 +427,11 @@ struct adapter {
 	struct work_task irq_tasks[MAX_VIRTUAL_FUNCTIONS];
 	int vf_req_gpu_access;
 	/* the time when a VF enters full access mode*/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec start_time;
+#else
+	struct timespec64 start_time;
+#endif
 	/* timeout check timer*/
 	struct hrtimer timeout_timer;
 	/* record the last VF id that owns gpu*/
@@ -534,7 +552,11 @@ int gim_sched_reset_vf(struct adapter *adapt,
 			int command_status);
 
 int gim_sched_reset_gpu(struct adapter *adapt);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 struct timespec time_elapsed(struct timespec *ts_start);
+#else
+struct timespec64 time_elapsed(struct timespec64 *ts_start);
+#endif
 void pause_scheduler(struct adapter *adapt);
 void resume_scheduler(struct adapter *adapt);
 int get_scheduler_time_interval(struct adapter *adapt, struct function *func);

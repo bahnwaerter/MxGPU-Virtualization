@@ -35,7 +35,11 @@
 struct amdgim_mutex_lock {
 	bool locked;
 	struct mutex lock_mutex;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timeval timeout_start;
+#else
+	struct timespec64 timeout_start;
+#endif
 	spinlock_t atom_lock;
 };
 

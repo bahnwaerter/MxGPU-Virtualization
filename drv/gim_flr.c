@@ -326,7 +326,11 @@ int gim_vf_flr(struct adapter *adapt, struct function *vf)
 	/* save FLR state */
 	gim_save_flr_state(adapt, vf);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	do_gettimeofday(&vf->time_log.reset_time);
+#else
+	ktime_get_real_ts64(&vf->time_log.reset_time);
+#endif
 	vf->time_log.reset_count++;
 
 	/* do the FLR */

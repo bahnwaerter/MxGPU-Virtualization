@@ -54,11 +54,19 @@ char *amdgim_commands[AMDGIM_COMMAND_LEN] = {
 
 void amdgim_mutex_get_lock(struct amdgim_mutex_lock *mutexlock)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timeval curr_t;
+#else
+	struct timespec64 curr_t;
+#endif
 
 	do {
 		spin_lock(&mutexlock->atom_lock);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 		do_gettimeofday(&curr_t);
+#else
+		ktime_get_real_ts64(&curr_t);
+#endif
 		/* if last_time.tv_sec ==0, it would never be timed out */
 		if (mutexlock->locked == true &&
 			mutexlock->timeout_start.tv_sec > 0 &&
@@ -91,7 +99,11 @@ void amdgim_mutex_get_lock(struct amdgim_mutex_lock *mutexlock)
 void amdgim_mutex_start_timeout(struct amdgim_mutex_lock *mutexlock)
 {
 	spin_lock(&mutexlock->atom_lock);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	do_gettimeofday(&mutexlock->timeout_start);
+#else
+	ktime_get_real_ts64(&mutexlock->timeout_start);
+#endif
 	spin_unlock(&mutexlock->atom_lock);
 }
 

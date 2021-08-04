@@ -48,11 +48,19 @@ void *map_vf_fb(struct pci_dev *pdev);
  */
 static int wait_dma_ready(struct adapter *adapt)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec start_time;
+#else
+	struct timespec64 start_time;
+#endif
 	unsigned long dma_cntl = 0;
 	int rc = 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	getnstimeofday(&start_time);
+#else
+	ktime_get_real_ts64(&start_time);
+#endif
 	do {
 		dma_cntl = pf_read_register(adapt, mmCP_DMA_CNTL);
 		/* DMA has 2 PIO commands in the FIFO
@@ -76,11 +84,19 @@ static int wait_dma_ready(struct adapter *adapt)
  */
 static int wait_dma_complete(struct adapter *adapt)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	struct timespec start_time;
+#else
+	struct timespec64 start_time;
+#endif
 	unsigned int cp_stat = 0;
 	int rc = 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	getnstimeofday(&start_time);
+#else
+	ktime_get_real_ts64(&start_time);
+#endif
 	do {
 		cp_stat = pf_read_register(adapt, mmCP_STAT);
 	} while ((cp_stat & 0x80400000)/* CP_BUSY or DMA_BUSY */

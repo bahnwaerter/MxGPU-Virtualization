@@ -53,8 +53,13 @@ void  map_mmio(struct function *func, struct pci_dev *pdev)
 		return;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 	p_mmr_base =  ioremap_nocache(pci_resource_start(pdev, i),
 					pci_resource_len(pdev, i));
+#else
+	p_mmr_base =  ioremap(pci_resource_start(pdev, i),
+					pci_resource_len(pdev, i));
+#endif
 
 	if (p_mmr_base == NULL) {
 		gim_err("can't iomap for BAR %d\n",  i);

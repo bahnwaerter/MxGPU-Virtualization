@@ -348,8 +348,13 @@ void *map_doorbell(struct pci_dev *pdev)
 		return NULL;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 	p_doorbell_base = ioremap_nocache(pci_resource_start(pdev, i),
 					pci_resource_len(pdev, i));
+#else
+	p_doorbell_base = ioremap(pci_resource_start(pdev, i),
+					pci_resource_len(pdev, i));
+#endif
 
 	if (p_doorbell_base == NULL)
 		gim_err("can't iomap for BAR %d\n",  i);
@@ -379,8 +384,13 @@ void *map_vf_fb(struct pci_dev *pdev)
 	gim_info("Map region 0x%llx for length %lld\n",
 		pci_resource_start(pdev, i),
 		pci_resource_len(pdev, i));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 	p_fb_base = ioremap_nocache(pci_resource_start(pdev, i),
 				pci_resource_len(pdev, i));
+#else
+	p_fb_base = ioremap(pci_resource_start(pdev, i),
+				pci_resource_len(pdev, i));
+#endif
 
 	if (p_fb_base == NULL)
 		gim_err("can't iomap for BAR %d\n",  i);
